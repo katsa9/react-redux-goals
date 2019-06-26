@@ -25,19 +25,40 @@ function createStore (reducer) {
 //return object containing the getState function
   return {
     getState,
-    subscribe
+    subscribe,
+    dispatch
   }
 }
 
 //App Code
 function todos (state = [], action) { //this is called a reducer - reduces the current state and the action to the new state
-  if(action.type === 'ADD_TODO'){
-    return state.concat([action.todo]);
+  switch (action.type) {
+    case 'ADD_TODO':
+      return state.concat([action.todo]);
+    case 'REMOVE_TODO':
+      return state.filter((todo) => todo.id !== action.id);
+    case 'TOGGLE_TODO':
+      return state.map((todo) => todo.id !== action.id ? todo :
+        Object.assign({}, todo, { complete: !todo.complete }));
+    default :
+    return state;    
   }
-  return state;
 }
 
+//Using the store
+const store = createStore(todos);
+store.subscribe(() => { //passing in a listener
+  console.log("The new state is: ", store.getState());
+});
 
+store.dispatch({  //passing the dispatch method an action object
+  type: 'ADD_TODO',
+  todo: {
+    id: 0,
+    name: 'learn redux',
+    complete: false
+  }
+});
 // const store = createStore();
 // store.subscribe(() => {
 //   console.log("the new state is", store.getState();
