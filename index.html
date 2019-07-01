@@ -68,16 +68,39 @@
       }
     }
 
-    function checkAndDispatch(store, action) {
-      if(action.type === ADD_TODO && action.todo.name.toLowerCase().includes("bitcoin")) {
-        return alert("Nope, thats a bad idea");
+//ES6 version of checker
+      const checker = (store) => (next) => (action) => {
+        if (action.type === ADD_TODO && action.todo.name.toLowerCase().includes("bitcoin")) {
+          return alert("Nope, thats a bad idea");
+        }
+        if (action.type === ADD_GOAL && action.goal.name.toLowerCase().includes("bitcoin")) {
+          return alert("Nope, thats a bad idea");
+        }
+        return next(action)
       }
-      if(action.type === ADD_GOAL && action.goal.name.toLowerCase().includes("bitcoin")) {
-        return alert("Nope, thats a bad idea");
-      }
-      return store.dispatch(action);
-    }
+    //create middleware function
+    // function checker(store) {
+    //     return function (next) { //next middleware call if there is one else dispatch will be passed in
+    //       return function (action) {
+    //         if (action.type === ADD_TODO && action.todo.name.toLowerCase().includes("bitcoin")) {
+    //           return alert("Nope, thats a bad idea");
+    //         }
+    //         if (action.type === ADD_GOAL && action.goal.name.toLowerCase().includes("bitcoin")) {
+    //           return alert("Nope, thats a bad idea");
+    //         }
+    //         return next(action);
+    //       }
+    //     }
+    //   }
 
+const logger = (store) => (next) => (action) => {
+  console.group(action.type)
+  console.log('The action: ', action)
+  const result = next(action) //calling dispatch
+  console.log('The new state is: ', store.getState())
+  console.groupEnd()
+  return result
+}
     //App Code
     function todos(state = [],
     action) { //this is called a reducer - reduces the current state and the action to the new state
@@ -108,11 +131,11 @@
     }
 
 
-    //Creting the store with Redux - pass object in with reducers
+    //Creating the store with Redux - pass object in with reducers
     const store = Redux.createStore(Redux.combineReducers({
       todos,
       goals
-    }))
+    }), Redux.applyMiddleware(checker, logger))
 
     //store takes in listener that is called everytime the state changes
     store.subscribe(() => {
@@ -122,8 +145,6 @@
 
       goals.forEach(addGoalToDOM);
       todos.forEach(addTodoToDOM);
-
-      console.log('The new state is: ', store.getState())
     })
 
     //DOM code
@@ -133,7 +154,7 @@
       const name = input.value;
       input.value = '';
 
-      checkAndDispatch(store, addTodoAction({
+      store.dispatch(addTodoAction({
         name,
         complete: false,
         id: generateId()
@@ -145,7 +166,7 @@
       const name = input.value;
       input.value = '';
 
-      checkAndDispatch(store, addGoalAction({
+      store.dispatch(store, addGoalAction({
         name,
         id: generateId()
       }))
@@ -175,7 +196,7 @@
 
       node.style.textDecoration = todo.complete ? "line-through" : "none";
       node.addEventListener('click', () => {
-            store.dispatch(toggleTodoAction(todo.id));
+          store.dispatch(toggleTodoAction(todo.id));
       })
     }
 
