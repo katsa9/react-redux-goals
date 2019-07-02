@@ -4,6 +4,9 @@
 <head>
   <title>My Todos Goals</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/3.7.2/redux.min.js"></script>
+  <script src="https://unpkg.com/react@16.3.0-alpha.1/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16.3.0-alpha.1/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
 </head>
 
 <body>
@@ -19,6 +22,9 @@
     <button id="goalBtn">Add Goal</button>
     <ul id="goals"></ul>
   </div>
+  <hr>
+
+  <div id="app"></div>
 
 
   <!-- Doing this on purpose -->
@@ -68,16 +74,16 @@
       }
     }
 
-//ES6 version of checker
-      const checker = (store) => (next) => (action) => {
-        if (action.type === ADD_TODO && action.todo.name.toLowerCase().includes("bitcoin")) {
-          return alert("Nope, thats a bad idea");
-        }
-        if (action.type === ADD_GOAL && action.goal.name.toLowerCase().includes("bitcoin")) {
-          return alert("Nope, thats a bad idea");
-        }
-        return next(action)
+    //ES6 version of checker
+    const checker = (store) => (next) => (action) => {
+      if (action.type === ADD_TODO && action.todo.name.toLowerCase().includes("bitcoin")) {
+        return alert("Nope, thats a bad idea");
       }
+      if (action.type === ADD_GOAL && action.goal.name.toLowerCase().includes("bitcoin")) {
+        return alert("Nope, thats a bad idea");
+      }
+      return next(action)
+    }
     //create middleware function
     // function checker(store) {
     //     return function (next) { //next middleware call if there is one else dispatch will be passed in
@@ -93,17 +99,17 @@
     //     }
     //   }
 
-const logger = (store) => (next) => (action) => {
-  console.group(action.type)
-  console.log('The action: ', action)
-  const result = next(action) //calling dispatch
-  console.log('The new state is: ', store.getState())
-  console.groupEnd()
-  return result
-}
+    const logger = (store) => (next) => (action) => {
+      console.group(action.type)
+      console.log('The action: ', action)
+      const result = next(action) //calling dispatch
+      console.log('The new state is: ', store.getState())
+      console.groupEnd()
+      return result
+    }
     //App Code
     function todos(state = [],
-    action) { //this is called a reducer - reduces the current state and the action to the new state
+      action) { //this is called a reducer - reduces the current state and the action to the new state
       switch (action.type) {
         case ADD_TODO:
           return state.concat([action.todo]);
@@ -131,7 +137,8 @@ const logger = (store) => (next) => (action) => {
     }
 
 
-    //Creating the store with Redux - pass object in with reducers
+    //Creating the store with Redux - pass object in with reducers as well as middleware
+    //middleware functions called in order they are passed in
     const store = Redux.createStore(Redux.combineReducers({
       todos,
       goals
@@ -192,11 +199,11 @@ const logger = (store) => (next) => (action) => {
       node.appendChild(text);
       node.appendChild(removeBtn);
       document.getElementById('todos')
-      .appendChild(node);
+        .appendChild(node);
 
       node.style.textDecoration = todo.complete ? "line-through" : "none";
       node.addEventListener('click', () => {
-          store.dispatch(toggleTodoAction(todo.id));
+        store.dispatch(toggleTodoAction(todo.id));
       })
     }
 
@@ -211,8 +218,74 @@ const logger = (store) => (next) => (action) => {
       node.appendChild(text);
       node.appendChild(removeBtn);
       document.getElementById('goals')
-      .appendChild(node);
+        .appendChild(node);
     }
-   
+  </script>
+
+  <script type='text/babel'>
+    function List(props) {
+      return (
+        <ul>
+          <li>LIST</li>
+        </ul>
+      )
+    }
+
+    class Todos extends React.Component {
+
+      addItem = (event) => {
+        event.preventDefault()
+        const name = this.input.value
+        this.input.value = ""
+
+        this.props.store.dispatch(addTodoAction({
+          name,
+          complete: false,
+          id: generateId()
+        }))
+      }
+
+      render() {
+        return (
+          <div>
+           <h1>Todo List</h1>
+           <input type='text'
+              placeholder="Add todo"
+              ref={(input) => this.input = input} />
+              <button onClick={this.addItem}>Add Todo</button>
+            <List />
+          </div>
+        )
+      }
+    }
+
+    class Goals extends React.Component {
+      render() {
+        return (
+          <div>
+            Goals
+            <List />
+          </div>
+        )
+      }
+    }
+
+
+  class App extends React.Component {
+    render() {
+      return (
+        <div>
+          <Todos store={this.props.store}/>
+          <Goals />
+        </div>
+      )
+    }
+  }
+
+  ReactDOM.render(
+    <App store={store}/>, 
+    document.getElementById('app')
+  )
+  
   </script>
 </body>
