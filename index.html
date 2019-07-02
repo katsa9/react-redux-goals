@@ -226,7 +226,11 @@
     function List(props) {
       return (
         <ul>
-          <li>LIST</li>
+          {props.items.map((item) => (
+            <li key={item.id}>
+              <span>{item.name}</span>
+            </li>
+          ))}
         </ul>
       )
     }
@@ -253,18 +257,34 @@
               placeholder="Add todo"
               ref={(input) => this.input = input} />
               <button onClick={this.addItem}>Add Todo</button>
-            <List />
+            <List items={this.props.todos}/>
           </div>
         )
       }
     }
 
     class Goals extends React.Component {
+
+      addItem = (event) => {
+        event.preventDefault()
+        const name = this.input.value
+        this.input.value= ""
+
+        this.props.store.dispatch(addGoalAction({
+          name,
+          id: generateId()
+        }))
+      }
+
       render() {
         return (
           <div>
-            Goals
-            <List />
+            <h1>Goals List</h1>
+              <input type='text'
+                placeholder="Add goal"
+                ref={(input) => this.input = input} />
+              <button onClick={this.addItem}>Add Goal</button>
+            <List items={this.props.goals}/>
           </div>
         )
       }
@@ -272,11 +292,20 @@
 
 
   class App extends React.Component {
+
+    componentDidMount () {
+      const { store } = this.props
+        store.subscribe(() => this.forceUpdate())
+      }
+
     render() {
+      const { store } = this.props
+      const { todos, goals } = store.getState()
+      
       return (
         <div>
-          <Todos store={this.props.store}/>
-          <Goals />
+          <Todos todos={todos} store={this.props.store}/>
+          <Goals goals={goals} store={this.props.store}/>
         </div>
       )
     }
