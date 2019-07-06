@@ -7,6 +7,7 @@
   <script src="https://unpkg.com/react@16.3.0-alpha.1/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@16.3.0-alpha.1/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+  <script src="https://unpkg.com/redux-thunk@2.2.0/dist/redux-thunk.min.js"></script>
   <!-- mock server -->
   <script src="https://tylermcginnis.com/goals-todos-api/index.js"></script>
 </head>
@@ -33,6 +34,17 @@
         type: RECEIVE_DATA,
         todos,
         goals,
+      }
+    }
+
+    function handleDeleteTodo(todo) {
+      return (dispatch) => {
+        dispatch(removeTodoAction(todo.id))
+        return API.deleteTodo(todo.id)
+          .catch(() => {
+            this.props.store.dispatch(addTodoAction(todo))
+            alert("There was an error. Try again")
+          })
       }
     }
 
@@ -152,7 +164,13 @@
       todos,
       goals,
       loading
-    }), Redux.applyMiddleware(checker, logger))
+    }), Redux.applyMiddleware(ReduxThunk.default, checker, logger)) 
+    /**
+     Thunk is middleware allows us to have action creators that return functions that take in dispatch as an argument. This allows us to have have action creators be the ones in charge of calling the API. 
+     This keeps the UI code clean and keeps the data logic separate.
+    What thunk does is it checks if the action type is funcion then it invokes the action and passes it dispatch. Otherwise it just invokes next()
+
+    **/
   </script>
   
   <script type='text/babel'>
@@ -191,12 +209,7 @@
       }
 
       removeItem = (todo) => {
-        this.props.store.dispatch(removeTodoAction(todo.id))
-        return API.deleteTodo(todo.id)
-          .catch(() => {
-            this.props.store.dispatch(addTodoAction(todo))
-            alert("There was an error. Try again")
-          })
+        this.props.store.dispatch(handleDeleteTodo(todo.id))
       }
 
       toggleItem = (id) => {
