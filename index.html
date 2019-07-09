@@ -68,7 +68,7 @@
         dispatch(removeTodoAction(todo.id))
         return API.deleteTodo(todo.id)
           .catch(() => {
-            this.props.store.dispatch(addTodoAction(todo))
+            dispatch(addTodoAction(todo))
             alert("There was an error. Try again")
           })
       }
@@ -256,17 +256,17 @@
 
       addItem = (event) => {
         event.preventDefault()
-        this.props.store.dispatch(handleAddTodo(
+        this.props.dispatch(handleAddTodo(
           this.input.value,
           () => this.input.value = ''))
       }
 
       removeItem = (todo) => {
-        this.props.store.dispatch(handleDeleteTodo(todo.id))
+        this.props.dispatch(handleDeleteTodo(todo))
       }
 
       toggleItem = (id) => {
-        this.props.store.dispatch(handleToggleTodo(id))
+        this.props.dispatch(handleToggleTodo(id))
       }
 
       render() {
@@ -287,18 +287,31 @@
       }
     }
 
+    class ConnectedTodos extends React.Component {
+      render() {
+        return (
+          <Context.Consumer>
+            {(store) => {
+              const {todos} = store.getState()
+              return <Todos todos={todos} dispatch={store.dispatch}/>
+            }}
+          </Context.Consumer>  
+        )
+      }
+    }
+
     class Goals extends React.Component {
 
       addItem = (event) => {
         event.preventDefault()
-        this.props.store.dispatch(handleAddGoal(
+        this.props.dispatch(handleAddGoal(
           this.input.value, 
           () => this.input.value = '') //callback allows us to update the input ui element from our action creator.
           )
       }
 
       removeItem = (goal) => {
-        this.props.store.dispatch(handleDeleteGoal(goal))
+        this.props.dispatch(handleDeleteGoal(goal))
       }
 
       render() {
@@ -318,6 +331,58 @@
       }
     }
 
+    class ConnectedGoals extends React.Component {
+      render() {
+        return (
+          <Context.Consumer >
+            {(store) => {
+              const {goals} = store.getState()
+              return <Goals goals={goals} dispatch={store.dispatch}/>
+            }}
+          </Context.Consumer>  
+        )
+      }
+    }
+
+
+    //FOR REFERENCE
+    // * connect function takes in a dunction that maps the state to the props that you want
+    //for the component passed in. Then in the render method the
+    // spread operator spreads thereturned object so that 
+    //each field in the object becomes a prop on the component.
+
+    function connect(mapStateToProps) {
+        return (Component) => {
+            class Receiver extends React.Component {
+                componentDidMount() {
+                    const {subscribe} = this.props.store;
+                    this.unsubscribe = subscribe(() =>{
+                        this.forceUpdate();
+                    })
+                }
+                componentWillUnmount(){
+                    this.unsubscribe();
+                }
+                render() {
+                    const {dispatch, getState } = this.props.store;
+                    const state = getState();
+                    const stateNeeded = mapStateToProps(state);
+                    return <Component {...stateNeeded} dispatch={dispatch}/>
+                }
+            }
+            class ConnectedComponent extends React.Component {
+                render() {
+                    return (
+                        <Context.Consumer>
+                            {store => <Receiver store={store}/>}
+                        </Context.Consumer>
+                    )
+                }
+            }
+            return ConnectedComponent;
+        }
+    }
+
 
   class App extends React.Component {
 
@@ -329,7 +394,7 @@
 
     render() {
       const { store } = this.props
-      const { todos, goals, loading } = store.getState()
+      const { loading } = store.getState()
       
       if (loading === true) {
           return <h3>Loading</h3>
@@ -337,17 +402,42 @@
 
       return (
         <div>
-          <Todos todos={todos} store={this.props.store}/>
-          <Goals goals={goals} store={this.props.store}/>
+          <ConnectedTodos />
+          <ConnectedGoals />
         </div>
+      )
+    }
+  }
+// Connected component responsible for getting the store off the context
+  class ConnectedApp extends React.Component {
+    render() {
+      return (
+        <Context.Consumer>
+          {(store) => (
+            <App store={store} />
+          )}
+        </Context.Consumer>  
+      )
+    }
+  }
+
+  const Context = React.createContext()
+
+  class Provider extends React.Component {
+    render() {
+      return (
+        <Context.Provider value={this.props.store}>
+          {this.props.children}
+        </Context.Provider>  
       )
     }
   }
 
   ReactDOM.render(
-    <App store={store}/>, 
+    <Provider store={store}>
+      <ConnectedApp />
+    </Provider>,
     document.getElementById('app')
-
   )
   
   </script>
